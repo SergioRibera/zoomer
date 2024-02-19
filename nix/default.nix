@@ -39,6 +39,7 @@ in
     buildInputs = with pkgs; [
       fontconfig.dev
       libxkbcommon.dev
+      wayland.dev
       xorg.libxcb
       xorg.libX11
       xorg.libXcursor
@@ -48,7 +49,10 @@ in
 
     # Base args, need for build all crate artifacts and caching this for late builds
     commonArgs = {
-      src = ./..;
+      src = lib.cleanSourceWith {
+          src = craneLib.path ./..;
+          filter = craneLib.filterCargoSources;
+      };
       doCheck = false;
       nativeBuildInputs =
         [pkgs.pkg-config]
