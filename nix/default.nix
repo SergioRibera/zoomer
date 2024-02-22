@@ -80,7 +80,7 @@ in
         CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER = "${stdenv.cc.targetPrefix}cc";
         CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-aarch64";
         HOST_CC = "${stdenv.cc.nativePrefix}cc";
-        workspaceTargetName = targetName;
+        # workspaceTargetName = targetName;
       };
 
     # Build packages and `nix run` apps
