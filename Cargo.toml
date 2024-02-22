@@ -10,6 +10,7 @@ merge2 = "0.3.0"
 directories = "5.0.1"
 mouse_position = "0.1.3"
 serde = { version = "1.0.196", features = ["derive"] }
+image = { version = "0.24.8", default-features = false }
 iced = { version = "0.12.0", default-features = false, features = ["image"] }
 tiny-skia = { version = "0.11.4", default-features = false, features = ["png"] }
 clap = { version = "4.5.1", features = [

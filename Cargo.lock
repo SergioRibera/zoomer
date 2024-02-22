@@ -3598,6 +3598,7 @@ dependencies = [
  "clap",
  "directories",
  "iced",
+ "image",
  "merge2",
  "mouse_position",
  "serde",

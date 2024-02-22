@@ -39,46 +39,52 @@ in
     buildInputs = with pkgs; [
       fontconfig.dev
       libxkbcommon.dev
-      wayland.dev
-      xorg.libxcb
+      expat
+      freetype
+      freetype.dev
+      libGL
+      pkg-config
       xorg.libX11
       xorg.libXcursor
-      xorg.libXrandr
       xorg.libXi
+      xorg.libXrandr
     ];
 
     # Base args, need for build all crate artifacts and caching this for late builds
-    commonArgs = {
-      src = lib.cleanSourceWith {
-          src = craneLib.path ./..;
-          filter = craneLib.filterCargoSources;
-      };
-      doCheck = false;
+    deps = {
       nativeBuildInputs =
-        [pkgs.pkg-config]
+        [pkgs.pkg-config pkgs.autoPatchelfHook]
         ++ lib.optionals stdenv.buildPlatform.isDarwin [
           pkgs.libiconv
+        ]
+        ++ lib.optionals stdenv.buildPlatform.isLinux [
+          pkgs.libxkbcommon.dev
+        ];
+      runtimeDependencies = with pkgs;
+        lib.optionals stdenv.isLinux [
+          wayland
+          libxkbcommon
         ];
       inherit buildInputs;
-      # patches = [ ./patches/cargo-lock.patch ];
     };
 
-    # zoomer artifacts
-    zoomerDeps = cranixLib.buildCranixDepsOnly commonArgs;
-
     # Lambda for build packages with cached artifacts
-    packageArgs = targetName:
-      commonArgs
+    commonArgs = targetName:
+      deps
       // {
+        src = lib.cleanSourceWith {
+            src = craneLib.path ./..;
+            filter = craneLib.filterCargoSources;
+        };
+        doCheck = false;
         CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER = "${stdenv.cc.targetPrefix}cc";
         CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-aarch64";
         HOST_CC = "${stdenv.cc.nativePrefix}cc";
-        cargoArtifacts = zoomerDeps;
         workspaceTargetName = targetName;
       };
 
     # Build packages and `nix run` apps
-    zoomerPkg = cranixLib.buildCranixBundle (packageArgs "zoomer");
+    zoomerPkg = cranixLib.buildCranixBundle (commonArgs "zoomer");
   in {
     # `nix run`
     apps = rec {
