@@ -16,6 +16,18 @@ pub struct Config {
     #[merge(strategy = swap_option)]
     /// Location for the launcher panel
     pub behaviour: Option<Behaviour>,
+    #[clap(long, default_value = "400")]
+    #[merge(strategy = swap_option)]
+    /// Initial width of tool
+    pub width: Option<u32>,
+    #[clap(long, default_value = "200")]
+    #[merge(strategy = swap_option)]
+    /// Initial height of tool
+    pub height: Option<u32>,
+    #[clap(long, short, default_value = "50")]
+    #[merge(strategy = swap_option)]
+    /// Initial height of tool
+    pub zoom_area: Option<u32>,
 }
 
 #[inline]

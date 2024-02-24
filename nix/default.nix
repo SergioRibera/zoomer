@@ -37,12 +37,16 @@ in
 
     # buildInputs for zimplemoji
     buildInputs = with pkgs; [
-      fontconfig.dev
+      stdenv.cc.cc.lib
+      # fontconfig.dev
+      libxkbcommon
       libxkbcommon.dev
-      expat
-      freetype
-      freetype.dev
-      libGL
+      wayland
+      wayland.dev
+      # expat
+      # freetype
+      # freetype.dev
+      # libGL
       pkg-config
       xorg.libX11
       xorg.libXcursor
@@ -104,8 +108,10 @@ in
           pkg-config
           cargo-dist
           cargo-release
+          wayland
+          libxkbcommon
         ]
         ++ buildInputs;
-      PKG_CONFIG_PATH = "${pkgs.fontconfig.dev}/lib/pkgconfig";
+      # PKG_CONFIG_PATH = "${pkgs.fontconfig.dev}/lib/pkgconfig";
     };
   }
