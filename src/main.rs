@@ -5,7 +5,6 @@ use std::rc::Rc;
 use app::MainApp;
 use mouse_position::{Mouse, MouseExt};
 
-// use app::MainApp;
 pub use config::Config;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use winit::event::{ElementState, KeyEvent, MouseScrollDelta, TouchPhase};
@@ -38,7 +37,6 @@ fn create_window((x, y): (i32, i32), (w, h): (u32, u32), ev: &ActiveEventLoop) -
     ev.create_window(attrs).unwrap()
 }
 
-// fn main() -> iced::Result {
 fn main() -> Result<(), winit::error::EventLoopError> {
     let settings = config::get_config();
     let (w, h) = (
@@ -89,6 +87,22 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                         window.set_outer_position(LogicalPosition::new(x, y));
                     }
                 }
+                WindowEvent::Resized(PhysicalSize { width, height }) => {
+                    if let Some(window) = window.clone() {
+                        let context = context
+                            .get_or_insert(softbuffer::Context::new(window.clone()).unwrap());
+                        let surface = surface.get_or_insert(
+                            softbuffer::Surface::new(&context, window.clone()).unwrap(),
+                        );
+                        surface
+                            .resize(
+                                NonZeroU32::new(width).unwrap(),
+                                NonZeroU32::new(height).unwrap(),
+                            )
+                            .unwrap();
+                        messages.push_back(app::MainMessage::Resize((width, height)));
+                    }
+                }
                 WindowEvent::RedrawRequested => {
                     if let Some(window) = window.clone() {
                         // send messages
@@ -100,28 +114,15 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                         let surface = surface.get_or_insert(
                             softbuffer::Surface::new(&context, window.clone()).unwrap(),
                         );
-                        let PhysicalSize { width, height } = window.inner_size();
-                        surface
-                            .resize(
-                                NonZeroU32::new(width).unwrap(),
-                                NonZeroU32::new(height).unwrap(),
-                            )
-                            .unwrap();
+                        let PhysicalSize { width, .. } = window.inner_size();
                         // Render
-                        println!("Pre render");
                         if let Some(img) = app.render() {
+                            window.pre_present_notify();
                             let mut buffer = surface.buffer_mut().unwrap();
 
-                            let mut color = 0x00000000;
                             for (x, y, p) in img.enumerate_pixels() {
-                                if let Some(buff) =
-                                    buffer.get_mut(y as usize * width as usize + x as usize)
-                                {
-                                    color = p.0[0] as u32
-                                        | (p.0[1] as u32) << 8
-                                        | (p.0[2] as u32) << 16;
-                                    *buff = color;
-                                }
+                                buffer[y as usize * width as usize + x as usize] =
+                                    u32::from_le_bytes(p.0);
                             }
                             println!("render");
                             // img.save("out.png").unwrap();
@@ -160,7 +161,7 @@ fn main() -> Result<(), winit::error::EventLoopError> {
     })
 }
 
-fn process_cmd(w: &Window, e: &ActiveEventLoop, cmd: &app::Command) {
+fn process_cmd(w: &Window, _: &ActiveEventLoop, cmd: &app::Command) {
     match cmd {
         app::Command::Resize(width, height) => {
             w.set_min_inner_size(Some(LogicalSize::new(*width, *height)))

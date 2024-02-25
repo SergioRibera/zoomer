@@ -1,7 +1,7 @@
 use image::{Rgba, RgbaImage};
 use libwayshot::WayshotConnection;
 
-use crate::shot::{capture, generate_border, round_image, Area};
+use crate::shot::{capture, generate_border, Area};
 use crate::utils::str_to_color;
 use crate::Config;
 
@@ -19,6 +19,7 @@ pub struct MainApp {
 #[derive(Debug, Clone)]
 pub enum MainMessage {
     Move(i32, i32),
+    Resize((u32, u32)),
     ZoomIn,
     ZoomOut,
     AltKey(bool),
@@ -49,6 +50,7 @@ impl MainApp {
     pub fn update(&mut self, msg: &MainMessage) -> Command {
         match msg {
             MainMessage::Move(x, y) => self.pos = (*x, *y),
+            MainMessage::Resize(size) => self.size = *size,
             MainMessage::AltKey(pressed) => self.alt = *pressed,
             MainMessage::ZoomIn => {
                 if self.alt {
@@ -85,7 +87,6 @@ impl MainApp {
         let (width, height) = self.size;
         let zoom_range = (self.config.zoom_area.unwrap_or(50) as i32 + self.scale_factor) as u32;
 
-        println!("Position: {x},{y}");
         let from_img = capture(
             &self.wayshot,
             Area {

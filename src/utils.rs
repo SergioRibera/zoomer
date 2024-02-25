@@ -1,7 +1,7 @@
 use image::Rgba;
 
 pub fn str_to_color(s: &str) -> Option<Rgba<u8>> {
-    if s == "auto" {
+    if s == "auto" || s == "none" {
         return None;
     }
     if s.is_empty() {
