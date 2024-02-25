@@ -19,13 +19,19 @@ use winit::{
 
 mod app;
 mod config;
+mod shot;
+mod utils;
 
 fn create_window((x, y): (i32, i32), (w, h): (u32, u32), ev: &ActiveEventLoop) -> Window {
     let attrs = Window::default_attributes()
         .with_title("Zoomer")
-        .with_resizable(false)
-        .with_decorations(false)
         .with_active(true)
+        .with_resizable(false)
+        .with_transparent(true)
+        .with_decorations(false)
+        .with_cursor(winit::window::Cursor::Icon(
+            winit::window::CursorIcon::Crosshair,
+        ))
         .with_window_level(winit::window::WindowLevel::AlwaysOnTop)
         .with_inner_size(LogicalSize::new(w, h))
         .with_position(LogicalPosition::new(x, y));
@@ -67,7 +73,7 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                 WindowEvent::KeyboardInput {
                     event:
                         KeyEvent {
-                            physical_key: winit::keyboard::PhysicalKey::Code(KeyCode::Escape),
+                            physical_key: PhysicalKey::Code(KeyCode::Escape),
                             state: ElementState::Pressed,
                             ..
                         },
@@ -102,20 +108,20 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                         if let Some(img) = app.render() {
                             let mut buffer = surface.buffer_mut().unwrap();
 
-                            for y in 0..height {
-                                for x in 0..width {
-                                    let index = y * width + x;
-                                    let [r, g, b, _] = img.get_pixel(x, y).0;
-                                    buffer[index as usize] =
-                                        (b as u32) | ((g as u32) << 8) | ((r as u32) << 16);
-                                }
+                            // buffer.fill(0);
+                            let mut color = 0x00000000;
+                            for (x, y, p) in img.enumerate_pixels() {
+                                color =
+                                    p.0[0] as u32 | (p.0[1] as u32) << 8 | (p.0[2] as u32) << 16;
+                                buffer[y as usize * width as usize + x as usize] = color;
                             }
                             println!("render");
+                        //     img.save("out.png").unwrap();
                             buffer.present().unwrap();
                         }
+                        // close_requested = true;
                     }
                 }
-                // WindowEvent::KeyboardInput { event, .. } => (),
                 // WindowEvent::ModifiersChanged(_) => (),
                 WindowEvent::MouseWheel {
                     delta: MouseScrollDelta::LineDelta(_, y),

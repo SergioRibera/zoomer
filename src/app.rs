@@ -1,7 +1,8 @@
-use image::RgbaImage;
+use image::{Rgba, RgbaImage};
 use libwayshot::WayshotConnection;
-use libwayshot::output::OutputPositioning;
 
+use crate::shot::{capture, generate_border, round_image, Area};
+use crate::utils::str_to_color;
 use crate::Config;
 
 pub struct MainApp {
@@ -10,6 +11,7 @@ pub struct MainApp {
     scale_factor: i32,
     wayshot: WayshotConnection,
     config: Config,
+    border_color: Option<Rgba<u8>>,
 }
 
 #[derive(Debug, Clone)]
@@ -28,12 +30,14 @@ pub enum Command {
 impl MainApp {
     pub fn new(config: Config) -> Self {
         let wayshot = WayshotConnection::new().unwrap();
+        let border_color = config.border_color.as_deref().and_then(str_to_color);
         Self {
             pos: (0, 0),
             size: (config.width.unwrap_or(400), config.height.unwrap_or(200)),
             scale_factor: 0,
             config,
             wayshot,
+            border_color,
         }
     }
 
@@ -49,50 +53,42 @@ impl MainApp {
     pub fn render(&self) -> Option<RgbaImage> {
         let (x, y) = self.pos;
         let (width, height) = self.size;
-        let zoom_range = 50;
+        let zoom_range = (self.config.zoom_area.unwrap_or(50) as i32 + self.scale_factor) as u32;
 
         println!("Position: {x},{y}");
-        capture_area(&self.wayshot, (x, y), zoom_range)
-            // .inspect_err(|e| println!("Problema al capturar: {e:?}"))
-            .map(|from_img| {
-                let (z_w, z_h) =
-                    calculate_ratio_size((zoom_range as u32, zoom_range as u32), (width, height));
-                image::imageops::resize(&from_img, z_w, z_h, image::imageops::FilterType::Triangle)
-            })
+        let from_img = capture(
+            &self.wayshot,
+            Area {
+                x,
+                y,
+                width: zoom_range,
+                height: zoom_range,
+            },
+        );
+        // .inspect_err(|e| println!("Problema al capturar: {e:?}"))
+        // let (z_w, z_h) =
+        //     calculate_ratio_size((zoom_range as u32, zoom_range as u32), (width, height));
+        let mut res = image::imageops::resize(
+            &from_img,
+            width,
+            height,
+            image::imageops::FilterType::Gaussian,
+        );
+        image::imageops::crop(&mut res, 0, height / 2 - zoom_range, width, height);
+        generate_border(&mut res, self.border_color.clone());
+        Some(res)
     }
-}
-
-fn capture_area(wayshot: &WayshotConnection, (x, y): (i32, i32), size: i32) -> Option<RgbaImage> {
-    wayshot
-        .get_all_outputs()
-        .iter()
-        .find(|o| {
-            let OutputPositioning {
-                x: ox,
-                y: oy,
-                width,
-                height,
-            } = o.dimensions;
-            x >= ox && (x - width) < ox + width && y >= oy && (y - height) < oy + height
-        })
-        .map(|o| {
-            let img = wayshot.screenshot_single_output(o, false).unwrap();
-            image::imageops::crop_imm(
-                &img,
-                (x - o.dimensions.width - (size / 2)) as u32,
-                (y - o.dimensions.height - (size / 2)) as u32,
-                size as u32,
-                size as u32,
-            )
-            .to_image()
-        })
 }
 
 fn calculate_ratio_size((img_w, img_h): (u32, u32), (w_w, w_h): (u32, u32)) -> (u32, u32) {
     let w_ratio = w_w / img_w;
     let h_ratio = w_h / img_h;
 
-    let ratio = w_ratio.max(h_ratio);
+    let ratio = if img_w > img_h {
+        w_ratio.min(h_ratio)
+    } else {
+        w_ratio.max(h_ratio)
+    };
 
     (img_w * ratio, img_h * ratio)
 }

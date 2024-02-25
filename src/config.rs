@@ -28,6 +28,10 @@ pub struct Config {
     #[merge(strategy = swap_option)]
     /// Initial height of tool
     pub zoom_area: Option<u32>,
+    #[clap(long, short = 'c', default_value = "auto")]
+    #[merge(strategy = swap_option)]
+    /// Initial height of tool
+    pub border_color: Option<String>,
 }
 
 #[inline]
