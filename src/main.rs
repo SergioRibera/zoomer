@@ -10,7 +10,7 @@ pub use config::Config;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use winit::event::{ElementState, KeyEvent, MouseScrollDelta, TouchPhase};
 use winit::event_loop::ActiveEventLoop;
-use winit::keyboard::{KeyCode, PhysicalKey};
+use winit::keyboard::{KeyCode, ModifiersKeyState, PhysicalKey};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::EventLoop,
@@ -79,6 +79,10 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                         },
                     ..
                 } => close_requested = true,
+                WindowEvent::ModifiersChanged(m) => messages.push_back(app::MainMessage::AltKey(
+                    m.lalt_state() == ModifiersKeyState::Pressed
+                        || m.ralt_state() == ModifiersKeyState::Pressed,
+                )),
                 WindowEvent::CursorMoved { .. } => {
                     if let Some(window) = window.as_ref() {
                         messages.push_back(app::MainMessage::Move(x, y));
@@ -87,6 +91,10 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                 }
                 WindowEvent::RedrawRequested => {
                     if let Some(window) = window.clone() {
+                        // send messages
+                        while let Some(msg) = messages.pop_front().as_ref() {
+                            process_cmd(&window, event_loop, &app.update(msg));
+                        }
                         let context = context
                             .get_or_insert(softbuffer::Context::new(window.clone()).unwrap());
                         let surface = surface.get_or_insert(
@@ -99,40 +107,38 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                                 NonZeroU32::new(height).unwrap(),
                             )
                             .unwrap();
-                        // send messages
-                        while let Some(msg) = messages.pop_front().as_ref() {
-                            app.update(msg);
-                        }
                         // Render
                         println!("Pre render");
                         if let Some(img) = app.render() {
                             let mut buffer = surface.buffer_mut().unwrap();
 
-                            // buffer.fill(0);
                             let mut color = 0x00000000;
                             for (x, y, p) in img.enumerate_pixels() {
-                                color =
-                                    p.0[0] as u32 | (p.0[1] as u32) << 8 | (p.0[2] as u32) << 16;
-                                buffer[y as usize * width as usize + x as usize] = color;
+                                if let Some(buff) =
+                                    buffer.get_mut(y as usize * width as usize + x as usize)
+                                {
+                                    color = p.0[0] as u32
+                                        | (p.0[1] as u32) << 8
+                                        | (p.0[2] as u32) << 16;
+                                    *buff = color;
+                                }
                             }
                             println!("render");
-                        //     img.save("out.png").unwrap();
+                            // img.save("out.png").unwrap();
                             buffer.present().unwrap();
                         }
                         // close_requested = true;
                     }
                 }
-                // WindowEvent::ModifiersChanged(_) => (),
                 WindowEvent::MouseWheel {
                     delta: MouseScrollDelta::LineDelta(_, y),
                     phase: TouchPhase::Moved,
                     ..
                 } => {
-                    println!("Wheel: {y:?}");
                     if y < 0. {
-                        messages.push_back(app::MainMessage::ZoomOut((y * 1000.) as i32));
+                        messages.push_back(app::MainMessage::ZoomIn);
                     } else {
-                        messages.push_back(app::MainMessage::ZoomIn((y * 1000.) as i32));
+                        messages.push_back(app::MainMessage::ZoomOut);
                     }
                 }
                 // WindowEvent::TouchpadMagnify { delta, phase, .. } => {
@@ -152,4 +158,13 @@ fn main() -> Result<(), winit::error::EventLoopError> {
             _ => (),
         }
     })
+}
+
+fn process_cmd(w: &Window, e: &ActiveEventLoop, cmd: &app::Command) {
+    match cmd {
+        app::Command::Resize(width, height) => {
+            w.set_min_inner_size(Some(LogicalSize::new(*width, *height)))
+        }
+        _ => {}
+    }
 }
