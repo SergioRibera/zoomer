@@ -105,6 +105,7 @@ pub fn capture(wayshot: &WayshotConnection, area: Area) -> RgbaImage {
             false,
         )
         .unwrap()
+        .into()
 }
 
 pub fn generate_border(img: &mut RgbaImage, color: Option<Rgba<u8>>) {

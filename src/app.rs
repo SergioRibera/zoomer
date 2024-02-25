@@ -105,11 +105,23 @@ impl MainApp {
             height,
             image::imageops::FilterType::Gaussian,
         );
-        image::imageops::crop(&mut res, 0, height / 2 - zoom_range, width, height);
+        image::imageops::crop(&mut res, 0, (height / 2) - zoom_range, width, height);
         generate_border(&mut res, self.border_color.clone());
         Some(res)
     }
 }
+
+// let window_state = self.window_state.lock().unwrap();
+// let scale_factor = window_state.scale_factor();
+// let LogicalPosition { x, y } = pos.to_logical(scale_factor);
+// let LogicalSize { width, height } = window_state.inner_size();
+// println!("Setting outer Position: {x},{y} {width}x{height}");
+// self.window
+//     .xdg_surface()
+//     .set_window_geometry(x, y, width as i32, height as i32);
+// self.window.wl_surface().damage(x, y, width as i32, height as i32);
+// self.window.wl_surface().commit();
+// self.request_redraw();
 
 fn calculate_ratio_size((img_w, img_h): (u32, u32), (w_w, w_h): (u32, u32)) -> (u32, u32) {
     let w_ratio = w_w / img_w;

@@ -29,4 +29,4 @@ clap = { version = "4.5.1", features = [
 
 [patch.crates-io]
 mouse_position = { git = "https://github.com/SergioRibera/mouse_position", branch = "compositors_protocols" }
-winit = { git = "https://github.com/SergioRibera/winit", branch = "wayland_position" }
+# winit = { git = "https://github.com/SergioRibera/winit", branch = "wayland_position" }

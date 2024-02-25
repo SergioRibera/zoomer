@@ -8,7 +8,8 @@ use mouse_position::{Mouse, MouseExt};
 pub use config::Config;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use winit::event::{ElementState, KeyEvent, MouseScrollDelta, TouchPhase};
-use winit::event_loop::ActiveEventLoop;
+use winit::event_loop::EventLoopWindowTarget;
+// use winit::event_loop::ActiveEventLoop;
 use winit::keyboard::{KeyCode, ModifiersKeyState, PhysicalKey};
 use winit::{
     event::{Event, WindowEvent},
@@ -21,20 +22,24 @@ mod config;
 mod shot;
 mod utils;
 
-fn create_window((x, y): (i32, i32), (w, h): (u32, u32), ev: &ActiveEventLoop) -> Window {
-    let attrs = Window::default_attributes()
+// fn create_window((x, y): (i32, i32), (w, h): (u32, u32), ev: &ActiveEventLoop) -> Window {
+fn create_window((x, y): (i32, i32), (w, h): (u32, u32), ev: &EventLoopWindowTarget<()>) -> Window {
+    winit::window::WindowBuilder::new()
+        // let attrs = Window::default_attributes()
         .with_title("Zoomer")
         .with_active(true)
         .with_resizable(false)
         .with_transparent(true)
         .with_decorations(false)
-        .with_cursor(winit::window::Cursor::Icon(
-            winit::window::CursorIcon::Crosshair,
-        ))
+        // .with_cursor(winit::window::Cursor::Icon(
+        //     winit::window::CursorIcon::Crosshair,
+        // ))
         .with_window_level(winit::window::WindowLevel::AlwaysOnTop)
         .with_inner_size(LogicalSize::new(w, h))
-        .with_position(LogicalPosition::new(x, y));
-    ev.create_window(attrs).unwrap()
+        .with_position(LogicalPosition::new(x, y))
+        .build(ev)
+        .unwrap()
+    // ev.create_window(attrs).unwrap()
 }
 
 fn main() -> Result<(), winit::error::EventLoopError> {
@@ -107,7 +112,7 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                     if let Some(window) = window.clone() {
                         // send messages
                         while let Some(msg) = messages.pop_front().as_ref() {
-                            process_cmd(&window, event_loop, &app.update(msg));
+                            process_cmd(&window, &app.update(msg));
                         }
                         let context = context
                             .get_or_insert(softbuffer::Context::new(window.clone()).unwrap());
@@ -121,8 +126,11 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                             let mut buffer = surface.buffer_mut().unwrap();
 
                             for (x, y, p) in img.enumerate_pixels() {
-                                buffer[y as usize * width as usize + x as usize] =
-                                    u32::from_le_bytes(p.0);
+                                let [r, g, b, a] = p.0;
+                                buffer[y as usize * width as usize + x as usize] = (a as u32) << 24
+                                    | (r as u32) << 16
+                                    | (g as u32) << 8
+                                    | b as u32;
                             }
                             println!("render");
                             // img.save("out.png").unwrap();
@@ -161,7 +169,7 @@ fn main() -> Result<(), winit::error::EventLoopError> {
     })
 }
 
-fn process_cmd(w: &Window, _: &ActiveEventLoop, cmd: &app::Command) {
+fn process_cmd(w: &Window, cmd: &app::Command) {
     match cmd {
         app::Command::Resize(width, height) => {
             w.set_min_inner_size(Some(LogicalSize::new(*width, *height)))
