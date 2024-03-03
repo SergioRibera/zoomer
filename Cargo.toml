@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-default = ["x11", "wayland"]
+default = ["wayland"] # BTW I use wayland
 wayland = ["libwayshot"]
 x11 = ["xcap"]
 
