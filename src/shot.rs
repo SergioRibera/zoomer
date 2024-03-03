@@ -11,8 +11,8 @@ use libwayshot::WayshotConnection;
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Area {
-    pub x: i32,
-    pub y: i32,
+    pub x: u32,
+    pub y: u32,
     pub width: u32,
     pub height: u32,
 }
@@ -21,19 +21,19 @@ pub struct Area {
 // type ScreenImage = ((Area, Transform), RgbaImage);
 // #[cfg(feature = "x11")]
 // type ScreenImage = ((Area, ()), RgbaImage);
-// 
-// #[cfg(feature = "wayland")]
-// fn rotate(screen: &RgbaImage, t: Transform) -> RgbaImage {
-//     use image::imageops::{rotate180, rotate270, rotate90};
-// 
-//     match t {
-//         Transform::_90 => rotate90(screen),
-//         Transform::_180 => rotate180(screen),
-//         Transform::_270 => rotate270(screen),
-//         _ => screen.clone(),
-//     }
-// }
-// 
+//
+#[cfg(feature = "wayland")]
+fn rotate(screen: &RgbaImage, t: Transform) -> RgbaImage {
+    use image::imageops::{rotate180, rotate270, rotate90};
+
+    match t {
+        Transform::_90 => rotate90(screen),
+        Transform::_180 => rotate180(screen),
+        Transform::_270 => rotate270(screen),
+        _ => screen.clone(),
+    }
+}
+//
 // fn make_all_screens(screens: &[ScreenImage]) -> RgbaImage {
 //     let max_w = screens.iter().map(|(a, _)| a.0.width).sum();
 //     let max_h = screens
@@ -42,48 +42,54 @@ pub struct Area {
 //         .max()
 //         .unwrap_or_default();
 //     let mut res = RgbaImage::from_pixel(max_w, max_h, Rgba([0, 0, 0, 255]));
-// 
+//
 //     for (a, screen_img) in screens {
 //         #[cfg(feature = "wayland")]
 //         let screen_img = &rotate(screen_img, a.1);
 //         overlay(&mut res, screen_img, (a.0.x).into(), (a.0.y).into());
 //     }
-// 
+//
 //     res
 // }
 
-pub fn capture(#[cfg(feature = "wayland")] wayshot: &WayshotConnection, area: Area) -> RgbaImage {
-    println!("Area: {area:?}");
+pub fn capture(
+    #[cfg(feature = "wayland")] wayshot: &WayshotConnection,
+    (x, y): (i32, i32),
+) -> RgbaImage {
+    let mut xc = None;
 
-    let mut x = None;
-
-    #[cfg(feature = "x11")]{
-    x = xcap::Monitor::from_point(area.x, area.y)
-        .expect(&format!("Not monitor from point ({}, {})", area.x, area.y))
-        .capture_image()
-        .map(|out| {
-            image::imageops::crop_imm(&out, area.x as u32, area.y as u32, area.width, area.height)
-                .to_image()
-        })
-        .ok();
+    #[cfg(feature = "x11")]
+    {
+        xc = xcap::Monitor::from_point(area.x, area.y)
+            .expect(&format!("Not monitor from point ({}, {})", area.x, area.y))
+            .capture_image()
+            .map(|out| out.into())
+            .ok();
     }
 
     #[cfg(feature = "x11")]
-    return x.expect("Cannot get image from point");
+    return xc.expect("Cannot get image from point");
 
     #[cfg(feature = "wayland")]
     wayshot
-        .screenshot(
-            libwayshot::CaptureRegion {
-                x_coordinate: area.x,
-                y_coordinate: area.y,
-                width: area.width as i32,
-                height: area.height as i32,
-            },
-            false,
-        )
-        .ok()
-        .or(x)
+        .get_all_outputs()
+        .iter()
+        .find(|o| {
+            let OutputPositioning {
+                x: ox,
+                y: oy,
+                width,
+                height,
+            } = o.dimensions;
+            x >= ox && (x - width) < ox + width && y >= oy && (y - height) < oy + height
+        })
+        .map(|o| {
+            rotate(
+                &wayshot.screenshot_single_output(o, false).unwrap(),
+                o.transform,
+            )
+        })
+        .or(xc)
         .unwrap()
         .into()
 }
@@ -92,7 +98,7 @@ pub fn generate_border(img: &mut RgbaImage, color: Option<Rgba<u8>>) {
     let (width, height) = img.dimensions();
     // TODO: extract from image
     let color = color.unwrap_or(Rgba([0, 0, 0, 0]));
-    let border_thickness = 5;
+    let border_thickness = 10;
 
     // Dibujar el borde en los lados de la imagen
     for x in 0..width {

@@ -6,7 +6,7 @@ use app::MainApp;
 use mouse_position::{Mouse, MouseExt};
 
 pub use config::Config;
-use winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
+use winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize, PhysicalPosition};
 use winit::event::{ElementState, KeyEvent, MouseScrollDelta, TouchPhase};
 use winit::event_loop::EventLoopWindowTarget;
 // use winit::event_loop::ActiveEventLoop;
@@ -23,34 +23,30 @@ mod shot;
 mod utils;
 
 // fn create_window((x, y): (i32, i32), (w, h): (u32, u32), ev: &ActiveEventLoop) -> Window {
-fn create_window((x, y): (i32, i32), (w, h): (u32, u32), ev: &EventLoopWindowTarget<()>) -> Window {
-    winit::window::WindowBuilder::new()
+fn create_window(ev: &EventLoopWindowTarget<()>) -> Window {
+    let w = winit::window::WindowBuilder::new()
         // let attrs = Window::default_attributes()
         .with_title("Zoomer")
         .with_active(true)
         .with_resizable(false)
-        .with_transparent(true)
         .with_decorations(false)
+        .with_fullscreen(Some(winit::window::Fullscreen::Borderless(None)))
         // .with_cursor(winit::window::Cursor::Icon(
         //     winit::window::CursorIcon::Crosshair,
         // ))
         .with_window_level(winit::window::WindowLevel::AlwaysOnTop)
-        .with_inner_size(LogicalSize::new(w, h))
-        .with_position(LogicalPosition::new(x, y))
         .build(ev)
-        .unwrap()
+        .unwrap();
+    w.set_cursor_icon(winit::window::CursorIcon::Crosshair);
+    w
     // ev.create_window(attrs).unwrap()
 }
 
 fn main() -> Result<(), winit::error::EventLoopError> {
     let settings = config::get_config();
-    let (w, h) = (
-        settings.width.unwrap_or(400),
-        settings.height.unwrap_or(200),
-    );
     let mut mouse = Mouse::default();
     let mut messages = VecDeque::new();
-    let mut app = MainApp::new(settings);
+    let mut app = MainApp::new(settings, mouse.get_pos().unwrap());
 
     let event_loop = EventLoop::new().unwrap();
     let mut close_requested = false;
@@ -60,20 +56,17 @@ fn main() -> Result<(), winit::error::EventLoopError> {
     let mut surface = None;
 
     event_loop.run(move |event, event_loop| {
-        let (x, y) = mouse.get_pos().unwrap();
-        messages.push_back(app::MainMessage::Move(x, y));
+        // let (x, y) = mouse.get_pos().unwrap();
+        // messages.push_back(app::MainMessage::Move(x, y));
         match event {
             Event::Resumed => {
-                window = Some(Rc::new(create_window(
-                    mouse.get_pos().unwrap(),
-                    (w, h),
-                    &event_loop,
-                )));
+                window = Some(Rc::new(create_window(&event_loop)));
                 ()
             }
             Event::WindowEvent { event, .. } => match event {
-                WindowEvent::CloseRequested => close_requested = true,
-                WindowEvent::KeyboardInput {
+                WindowEvent::CursorLeft { .. }
+                | WindowEvent::CloseRequested
+                | WindowEvent::KeyboardInput {
                     event:
                         KeyEvent {
                             physical_key: PhysicalKey::Code(KeyCode::Escape),
@@ -86,11 +79,11 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                     m.lalt_state() == ModifiersKeyState::Pressed
                         || m.ralt_state() == ModifiersKeyState::Pressed,
                 )),
-                WindowEvent::CursorMoved { .. } => {
-                    if let Some(window) = window.as_ref() {
-                        messages.push_back(app::MainMessage::Move(x, y));
-                        window.set_outer_position(LogicalPosition::new(x, y));
-                    }
+                WindowEvent::CursorMoved { position: PhysicalPosition { x, y }, .. } => {
+                    // if let Some(window) = window.as_ref() {
+                        messages.push_back(app::MainMessage::Move(x as i32, y as i32));
+                        // window.set_outer_position(LogicalPosition::new(x, y));
+                    // }
                 }
                 WindowEvent::Resized(PhysicalSize { width, height }) => {
                     if let Some(window) = window.clone() {
@@ -119,7 +112,7 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                         let surface = surface.get_or_insert(
                             softbuffer::Surface::new(&context, window.clone()).unwrap(),
                         );
-                        let PhysicalSize { width, .. } = window.inner_size();
+                        let PhysicalSize { width, height } = window.inner_size();
                         // Render
                         if let Some(img) = app.render() {
                             window.pre_present_notify();
@@ -132,7 +125,6 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                                     | (g as u32) << 8
                                     | b as u32;
                             }
-                            println!("render");
                             // img.save("out.png").unwrap();
                             buffer.present().unwrap();
                         }
