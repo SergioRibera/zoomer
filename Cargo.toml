@@ -3,12 +3,18 @@ name = "zoomer"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["x11", "wayland"]
+wayland = ["libwayshot"]
+x11 = ["xcap"]
+
 [dependencies]
 toml = "0.8.10"
 merge2 = "0.3.0"
-libwayshot = "0.3.0"
 directories = "5.0.1"
 mouse_position = "0.1.3"
+xcap = { version = "0.0.4", optional = true }
+libwayshot = { version = "0.3.0", optional = true }
 serde = { version = "1.0.196", features = ["derive"] }
 image = { version = "0.24.8", default-features = false, features = ["png"] }
 softbuffer = { version = "0.4.1", default-features = false, features = [

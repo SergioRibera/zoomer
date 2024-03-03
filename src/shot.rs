@@ -14,86 +14,61 @@ pub struct Area {
     pub height: u32,
 }
 
-#[cfg(target_os = "linux")]
-type ScreenImage = ((Area, Transform), RgbaImage);
-#[cfg(not(target_os = "linux"))]
-type ScreenImage = ((Area, ()), RgbaImage);
-
-fn wayland_detect() -> bool {
-    let xdg_session_type = var_os("XDG_SESSION_TYPE")
-        .unwrap_or_default()
-        .to_string_lossy()
-        .to_string();
-
-    let wayland_display = var_os("WAYLAND_DISPLAY")
-        .unwrap_or_default()
-        .to_string_lossy()
-        .to_string();
-
-    xdg_session_type.eq("wayland") || wayland_display.to_lowercase().contains("wayland")
-}
-#[cfg(target_os = "linux")]
-fn rotate(screen: &RgbaImage, t: Transform) -> RgbaImage {
-    use image::imageops::{rotate180, rotate270, rotate90};
-
-    match t {
-        Transform::_90 => rotate90(screen),
-        Transform::_180 => rotate180(screen),
-        Transform::_270 => rotate270(screen),
-        _ => screen.clone(),
-    }
-}
-
-fn make_all_screens(screens: &[ScreenImage]) -> RgbaImage {
-    let max_w = screens.iter().map(|(a, _)| a.0.width).sum();
-    let max_h = screens
-        .iter()
-        .map(|(a, _)| a.0.height)
-        .max()
-        .unwrap_or_default();
-    let mut res = RgbaImage::from_pixel(max_w, max_h, Rgba([0, 0, 0, 255]));
-
-    for (a, screen_img) in screens {
-        #[cfg(target_os = "linux")]
-        let screen_img = &rotate(screen_img, a.1);
-        overlay(&mut res, screen_img, (a.0.x).into(), (a.0.y).into());
-    }
-
-    res
-}
+// #[cfg(feature = "wayland")]
+// type ScreenImage = ((Area, Transform), RgbaImage);
+// #[cfg(feature = "x11")]
+// type ScreenImage = ((Area, ()), RgbaImage);
+// 
+// #[cfg(feature = "wayland")]
+// fn rotate(screen: &RgbaImage, t: Transform) -> RgbaImage {
+//     use image::imageops::{rotate180, rotate270, rotate90};
+// 
+//     match t {
+//         Transform::_90 => rotate90(screen),
+//         Transform::_180 => rotate180(screen),
+//         Transform::_270 => rotate270(screen),
+//         _ => screen.clone(),
+//     }
+// }
+// 
+// fn make_all_screens(screens: &[ScreenImage]) -> RgbaImage {
+//     let max_w = screens.iter().map(|(a, _)| a.0.width).sum();
+//     let max_h = screens
+//         .iter()
+//         .map(|(a, _)| a.0.height)
+//         .max()
+//         .unwrap_or_default();
+//     let mut res = RgbaImage::from_pixel(max_w, max_h, Rgba([0, 0, 0, 255]));
+// 
+//     for (a, screen_img) in screens {
+//         #[cfg(feature = "wayland")]
+//         let screen_img = &rotate(screen_img, a.1);
+//         overlay(&mut res, screen_img, (a.0.x).into(), (a.0.y).into());
+//     }
+// 
+//     res
+// }
 
 pub fn capture(wayshot: &WayshotConnection, area: Area) -> RgbaImage {
-    // let outputs = wayshot.get_all_outputs();
-    // let out = make_all_screens(
-    //     &outputs
-    //         .iter()
-    //         .map(|o| {
-    //             let OutputPositioning {
-    //                 x,
-    //                 y,
-    //                 width,
-    //                 height,
-    //             } = o.dimensions;
-    //             (
-    //                 (
-    //                     Area {
-    //                         x,
-    //                         y,
-    //                         width: width as u32,
-    //                         height: height as u32,
-    //                     },
-    //                     o.transform,
-    //                 ),
-    //                 wayshot
-    //                     .screenshot_single_output(o, true)
-    //                     .map_err(|_| "Cannot take screenshot on Wayland".to_string())
-    //                     .unwrap(),
-    //             )
-    //         })
-    //         .collect::<Vec<(_, _)>>(),
-    // );
-    // image::imageops::crop_imm(&out, area.x as u32, area.y as u32, area.width, area.height).to_image()
     println!("Area: {area:?}");
+
+    let mut x = None;
+
+    #[cfg(feature = "x11")]{
+    x = xcap::Monitor::from_point(area.x, area.y)
+        .expect(&format!("Not monitor from point ({}, {})", area.x, area.y))
+        .capture_image()
+        .map(|out| {
+            image::imageops::crop_imm(&out, area.x as u32, area.y as u32, area.width, area.height)
+                .to_image()
+        })
+        .ok();
+    }
+
+    #[cfg(feature = "x11")]
+    return x.expect("Cannot get image from point");
+
+    #[cfg(feature = "wayland")]
     wayshot
         .screenshot(
             libwayshot::CaptureRegion {
@@ -104,6 +79,8 @@ pub fn capture(wayshot: &WayshotConnection, area: Area) -> RgbaImage {
             },
             false,
         )
+        .ok()
+        .or(x)
         .unwrap()
         .into()
 }
