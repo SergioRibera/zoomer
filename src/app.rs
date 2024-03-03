@@ -1,5 +1,4 @@
 use image::{Rgba, RgbaImage};
-use libwayshot::WayshotConnection;
 
 use crate::shot::{capture, generate_border, Area};
 use crate::utils::str_to_color;
@@ -11,7 +10,8 @@ pub struct MainApp {
     size: (u32, u32),
     scale_size: i32,
     scale_factor: i32,
-    wayshot: WayshotConnection,
+    #[cfg(feature = "wayland")]
+    wayshot: libwayshot::WayshotConnection,
     config: Config,
     border_color: Option<Rgba<u8>>,
 }
@@ -33,7 +33,8 @@ pub enum Command {
 
 impl MainApp {
     pub fn new(config: Config) -> Self {
-        let wayshot = WayshotConnection::new().unwrap();
+        #[cfg(feature = "wayland")]
+        let wayshot = libwayshot::WayshotConnection::new().unwrap();
         let border_color = config.border_color.as_deref().and_then(str_to_color);
         Self {
             alt: false,
@@ -42,6 +43,7 @@ impl MainApp {
             scale_size: 0,
             size: (config.width.unwrap_or(400), config.height.unwrap_or(200)),
             config,
+            #[cfg(feature = "wayland")]
             wayshot,
             border_color,
         }
@@ -88,7 +90,7 @@ impl MainApp {
         let zoom_range = (self.config.zoom_area.unwrap_or(50) as i32 + self.scale_factor) as u32;
 
         let from_img = capture(
-            &self.wayshot,
+            #[cfg(feature = "wayland")] &self.wayshot,
             Area {
                 x,
                 y,

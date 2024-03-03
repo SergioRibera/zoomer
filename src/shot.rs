@@ -2,8 +2,11 @@ use std::env::var_os;
 
 use image::imageops::overlay;
 use image::{Rgb, Rgba, RgbaImage};
+#[cfg(feature = "wayland")]
 use libwayshot::output::OutputPositioning;
+#[cfg(feature = "wayland")]
 use libwayshot::reexport::Transform;
+#[cfg(feature = "wayland")]
 use libwayshot::WayshotConnection;
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -49,7 +52,7 @@ pub struct Area {
 //     res
 // }
 
-pub fn capture(wayshot: &WayshotConnection, area: Area) -> RgbaImage {
+pub fn capture(#[cfg(feature = "wayland")] wayshot: &WayshotConnection, area: Area) -> RgbaImage {
     println!("Area: {area:?}");
 
     let mut x = None;
