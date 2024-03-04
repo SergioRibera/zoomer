@@ -1,4 +1,4 @@
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use merge2::{Merge, bool::overwrite_true};
 use serde::{Deserialize, Serialize};
 
