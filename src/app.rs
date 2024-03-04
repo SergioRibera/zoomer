@@ -96,6 +96,7 @@ impl MainApp {
 
     pub fn render(&self) -> Option<RgbaImage> {
         let (x, y) = self.pos;
+        let (area_width, area_height) = self.size;
         let zoom_range = (self.config.zoom_area.unwrap_or(50) as i32 + self.scale_factor) as u32;
         let mut img = self.img.clone();
         let res = image::imageops::crop_imm(
@@ -107,12 +108,21 @@ impl MainApp {
         )
         .to_image();
 
-        let mut res =
-            image::imageops::resize(&res, 400, 200, image::imageops::FilterType::Gaussian);
+        let mut res = image::imageops::resize(
+            &res,
+            area_width,
+            area_height,
+            image::imageops::FilterType::Gaussian,
+        );
         if let Some(color) = self.border_color {
             generate_border(&mut res, color);
         }
-        image::imageops::overlay(&mut img, &res, (x - 200).into(), (y - 100).into());
+        image::imageops::overlay(
+            &mut img,
+            &res,
+            (x - (area_width / 2) as i32).into(),
+            (y - (area_height / 2) as i32).into(),
+        );
         Some(img)
     }
 }
