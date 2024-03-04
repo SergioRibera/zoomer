@@ -120,9 +120,17 @@ impl MainApp {
             image::imageops::FilterType::Gaussian,
         );
         if self.config.circle {
-            res = round_image(&res, self.border_color);
+            res = round_image(
+                &res,
+                self.config.border_thickness.unwrap_or_default() as f32,
+                self.border_color,
+            );
         } else if let Some(color) = self.border_color {
-            generate_border(&mut res, color);
+            generate_border(
+                &mut res,
+                self.config.border_thickness.unwrap_or_default(),
+                color,
+            );
         }
         image::imageops::overlay(
             &mut img,

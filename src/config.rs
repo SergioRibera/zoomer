@@ -25,6 +25,10 @@ pub struct Config {
     #[merge(strategy = swap_option)]
     /// Initial height of tool
     pub border_color: Option<String>,
+    #[clap(long, short = 't', default_value = "5")]
+    #[merge(strategy = swap_option)]
+    /// Border thickness
+    pub border_thickness: Option<u32>
 }
 
 #[inline]

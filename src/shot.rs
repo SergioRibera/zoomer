@@ -90,11 +90,10 @@ pub fn capture(
         .unwrap()
 }
 
-pub fn generate_border(img: &mut RgbaImage, color: Rgba<u8>) {
+pub fn generate_border(img: &mut RgbaImage, border_thickness: u32, color: Rgba<u8>) {
     let (width, height) = img.dimensions();
     // TODO: extract from image
     let color = color;
-    let border_thickness = 5;
 
     // Dibujar el borde en los lados de la imagen
     for x in 0..width {
@@ -112,9 +111,8 @@ pub fn generate_border(img: &mut RgbaImage, color: Rgba<u8>) {
     }
 }
 
-pub fn round_image(img: &RgbaImage, color: Option<Rgba<u8>>) -> RgbaImage {
+pub fn round_image(img: &RgbaImage, border_thickness: f32, color: Option<Rgba<u8>>) -> RgbaImage {
     let (width, height) = img.dimensions();
-    let border_thickness = 5.;
     let border_radius = (width.max(height) as f32 / 2.) - border_thickness;
     let mut new_img = RgbaImage::new(width, height);
 
