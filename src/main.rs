@@ -6,7 +6,7 @@ use app::MainApp;
 use mouse_position::{Mouse, MouseExt};
 
 pub use config::Config;
-use winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize, PhysicalPosition};
+use winit::dpi::{LogicalSize, PhysicalSize, PhysicalPosition};
 use winit::event::{ElementState, KeyEvent, MouseScrollDelta, TouchPhase};
 use winit::event_loop::EventLoopWindowTarget;
 // use winit::event_loop::ActiveEventLoop;
@@ -112,7 +112,7 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                         let surface = surface.get_or_insert(
                             softbuffer::Surface::new(&context, window.clone()).unwrap(),
                         );
-                        let PhysicalSize { width, height } = window.inner_size();
+                        let PhysicalSize { width, .. } = window.inner_size();
                         // Render
                         if let Some(img) = app.render() {
                             window.pre_present_notify();

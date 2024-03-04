@@ -1,6 +1,6 @@
 use image::{Rgba, RgbaImage};
 
-use crate::shot::{capture, generate_border, Area};
+use crate::shot::{capture, generate_border};
 use crate::utils::str_to_color;
 use crate::Config;
 

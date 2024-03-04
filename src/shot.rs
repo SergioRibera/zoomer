@@ -1,7 +1,4 @@
-use std::env::var_os;
-
-use image::imageops::overlay;
-use image::{Rgb, Rgba, RgbaImage};
+use image::{Rgba, RgbaImage};
 #[cfg(feature = "wayland")]
 use libwayshot::output::OutputPositioning;
 #[cfg(feature = "wayland")]
@@ -60,8 +57,8 @@ pub fn capture(
 
     #[cfg(feature = "x11")]
     {
-        xc = xcap::Monitor::from_point(area.x, area.y)
-            .expect(&format!("Not monitor from point ({}, {})", area.x, area.y))
+        xc = xcap::Monitor::from_point(x, y)
+            .expect(&format!("Not monitor from point ({}, {})", x, y))
             .capture_image()
             .map(|out| out.into())
             .ok();
@@ -91,7 +88,6 @@ pub fn capture(
         })
         .or(xc)
         .unwrap()
-        .into()
 }
 
 pub fn generate_border(img: &mut RgbaImage, color: Option<Rgba<u8>>) {
