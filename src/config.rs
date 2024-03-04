@@ -4,6 +4,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, Deserialize, Merge, Parser, Serialize)]
 #[clap(version, author)]
+/// Application to zoom to certain areas of the screen.
+/// Use the Mouse Wheel to zoom in and zoom out.
+/// Use Alt + Mouse Whell to increase the area size
 pub struct Config {
     #[clap(long, short, default_value = "false")]
     #[merge(strategy = overwrite_true)]
