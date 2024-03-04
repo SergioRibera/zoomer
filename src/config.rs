@@ -1,10 +1,14 @@
 use clap::{Parser, ValueEnum};
-use merge2::Merge;
+use merge2::{Merge, bool::overwrite_true};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, Deserialize, Merge, Parser, Serialize)]
 #[clap(version, author)]
 pub struct Config {
+    #[clap(long, short, default_value = "false")]
+    #[merge(strategy = overwrite_true)]
+    /// Make circle zoom area
+    pub circle: bool,
     #[clap(long, default_value = "400")]
     #[merge(strategy = swap_option)]
     /// Initial width of tool
@@ -17,7 +21,7 @@ pub struct Config {
     #[merge(strategy = swap_option)]
     /// Initial height of tool
     pub zoom_area: Option<u32>,
-    #[clap(long, short = 'c', default_value = "auto")]
+    #[clap(long, short = 'b', default_value = "auto")]
     #[merge(strategy = swap_option)]
     /// Initial height of tool
     pub border_color: Option<String>,
