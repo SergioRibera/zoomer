@@ -2,20 +2,9 @@ use clap::{Parser, ValueEnum};
 use merge2::Merge;
 use serde::{Deserialize, Serialize};
 
-#[derive(Default, Clone, Debug, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
-pub enum Behaviour {
-    #[default]
-    Default,
-    MacOS,
-}
-
 #[derive(Clone, Default, Debug, Deserialize, Merge, Parser, Serialize)]
 #[clap(version, author)]
 pub struct Config {
-    #[clap(long, short)]
-    #[merge(strategy = swap_option)]
-    /// Location for the launcher panel
-    pub behaviour: Option<Behaviour>,
     #[clap(long, default_value = "400")]
     #[merge(strategy = swap_option)]
     /// Initial width of tool
