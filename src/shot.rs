@@ -14,11 +14,6 @@ pub struct Area {
     pub height: u32,
 }
 
-// #[cfg(feature = "wayland")]
-// type ScreenImage = ((Area, Transform), RgbaImage);
-// #[cfg(feature = "x11")]
-// type ScreenImage = ((Area, ()), RgbaImage);
-//
 #[cfg(feature = "wayland")]
 fn rotate(screen: &RgbaImage, t: Transform) -> RgbaImage {
     use image::imageops::{rotate180, rotate270, rotate90};
@@ -30,24 +25,6 @@ fn rotate(screen: &RgbaImage, t: Transform) -> RgbaImage {
         _ => screen.clone(),
     }
 }
-//
-// fn make_all_screens(screens: &[ScreenImage]) -> RgbaImage {
-//     let max_w = screens.iter().map(|(a, _)| a.0.width).sum();
-//     let max_h = screens
-//         .iter()
-//         .map(|(a, _)| a.0.height)
-//         .max()
-//         .unwrap_or_default();
-//     let mut res = RgbaImage::from_pixel(max_w, max_h, Rgba([0, 0, 0, 255]));
-//
-//     for (a, screen_img) in screens {
-//         #[cfg(feature = "wayland")]
-//         let screen_img = &rotate(screen_img, a.1);
-//         overlay(&mut res, screen_img, (a.0.x).into(), (a.0.y).into());
-//     }
-//
-//     res
-// }
 
 pub fn capture(
     #[cfg(feature = "wayland")] wayshot: &WayshotConnection,

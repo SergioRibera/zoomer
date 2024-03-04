@@ -9,7 +9,6 @@ pub use config::Config;
 use winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize};
 use winit::event::{ElementState, KeyEvent, MouseScrollDelta, TouchPhase};
 use winit::event_loop::EventLoopWindowTarget;
-// use winit::event_loop::ActiveEventLoop;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::{
     event::{Event, WindowEvent},
@@ -22,24 +21,18 @@ mod config;
 mod shot;
 mod utils;
 
-// fn create_window((x, y): (i32, i32), (w, h): (u32, u32), ev: &ActiveEventLoop) -> Window {
 fn create_window(ev: &EventLoopWindowTarget<()>) -> Window {
     let w = winit::window::WindowBuilder::new()
-        // let attrs = Window::default_attributes()
         .with_title("Zoomer")
         .with_active(true)
         .with_resizable(false)
         .with_decorations(false)
         .with_fullscreen(Some(winit::window::Fullscreen::Borderless(None)))
-        // .with_cursor(winit::window::Cursor::Icon(
-        //     winit::window::CursorIcon::Crosshair,
-        // ))
         .with_window_level(winit::window::WindowLevel::AlwaysOnTop)
         .build(ev)
         .unwrap();
     w.set_cursor_icon(winit::window::CursorIcon::Crosshair);
     w
-    // ev.create_window(attrs).unwrap()
 }
 
 fn main() -> Result<(), winit::error::EventLoopError> {
@@ -56,8 +49,6 @@ fn main() -> Result<(), winit::error::EventLoopError> {
     let mut surface = None;
 
     event_loop.run(move |event, event_loop| {
-        // let (x, y) = mouse.get_pos().unwrap();
-        // messages.push_back(app::MainMessage::Move(x, y));
         match event {
             Event::Resumed => {
                 window = Some(Rc::new(create_window(&event_loop)));
@@ -88,10 +79,7 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                     position: PhysicalPosition { x, y },
                     ..
                 } => {
-                    // if let Some(window) = window.as_ref() {
                     messages.push_back(app::MainMessage::Move(x as i32, y as i32));
-                    // window.set_outer_position(LogicalPosition::new(x, y));
-                    // }
                 }
                 WindowEvent::Resized(PhysicalSize { width, height }) => {
                     if let Some(window) = window.clone() {
@@ -161,9 +149,6 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                         messages.push_back(app::MainMessage::ZoomOut);
                     }
                 }
-                // WindowEvent::TouchpadMagnify { delta, phase, .. } => {
-                //     println!("Touch: {delta:?} - {phase:?}");
-                // }
                 _ => (),
             },
             Event::AboutToWait => {
