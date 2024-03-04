@@ -150,6 +150,17 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                         messages.push_back(app::MainMessage::ZoomOut);
                     }
                 }
+                WindowEvent::TouchpadMagnify {
+                    delta,
+                    phase: TouchPhase::Moved,
+                    ..
+                } => {
+                    if delta < 0. {
+                        messages.push_back(app::MainMessage::ZoomIn);
+                    } else {
+                        messages.push_back(app::MainMessage::ZoomOut);
+                    }
+                }
                 // WindowEvent::TouchpadMagnify { delta, phase, .. } => {
                 //     println!("Touch: {delta:?} - {phase:?}");
                 // }
