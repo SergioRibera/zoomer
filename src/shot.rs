@@ -94,7 +94,7 @@ pub fn generate_border(img: &mut RgbaImage, color: Option<Rgba<u8>>) {
     let (width, height) = img.dimensions();
     // TODO: extract from image
     let color = color.unwrap_or(Rgba([0, 0, 0, 0]));
-    let border_thickness = 10;
+    let border_thickness = 5;
 
     // Dibujar el borde en los lados de la imagen
     for x in 0..width {
