@@ -109,7 +109,9 @@ impl MainApp {
 
         let mut res =
             image::imageops::resize(&res, 400, 200, image::imageops::FilterType::Gaussian);
-        generate_border(&mut res, self.border_color.clone());
+        if let Some(color) = self.border_color {
+            generate_border(&mut res, color);
+        }
         image::imageops::overlay(&mut img, &res, (x - 200).into(), (y - 100).into());
         Some(img)
     }
