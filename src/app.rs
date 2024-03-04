@@ -6,11 +6,12 @@ use crate::Config;
 
 pub struct MainApp {
     alt: bool,
-    pos: (i32, i32),
-    area_size: (u32, u32),
-    scale_size: i32,
-    scale_factor: i32,
     config: Config,
+    pos: (i32, i32),
+    scale_zoom: i32,
+    area_scale: i32,
+    area_size: (u32, u32),
+    origin_area_size: (u32, u32),
     border_color: Option<Rgba<u8>>,
     img_origin: RgbaImage,
     img: RgbaImage,
@@ -42,16 +43,18 @@ impl MainApp {
             &wayshot,
             (x, y),
         );
+        let origin_area_size = (config.width.unwrap_or(400), config.height.unwrap_or(200));
         Self {
             img_origin: img.clone(),
             img,
-            alt: false,
-            pos: (0, 0),
-            scale_factor: 0,
-            scale_size: 0,
-            area_size: (config.width.unwrap_or(400), config.height.unwrap_or(200)),
             config,
             border_color,
+            alt: false,
+            pos: (0, 0),
+            scale_zoom: 0,
+            area_scale: 0,
+            area_size: origin_area_size,
+            origin_area_size,
         }
     }
 
@@ -59,35 +62,30 @@ impl MainApp {
         match msg {
             MainMessage::Move(x, y) => self.pos = (*x, *y),
             MainMessage::Resize(size) => {
-                // self.area_size = *size;
                 self.img =
                     image::imageops::crop_imm(&self.img_origin, 0, 0, size.0, size.1).to_image();
             }
             MainMessage::AltKey(pressed) => self.alt = *pressed,
             MainMessage::ZoomIn => {
                 if self.alt {
-                    self.scale_size += 1;
-                    return Command::Resize(
-                        self.area_size.0 as i32 + self.scale_size,
-                        self.area_size.1 as i32 + self.scale_size,
+                    self.area_scale += 1;
+                    self.area_size = (
+                        (self.origin_area_size.0 as i32 + self.area_scale) as u32,
+                        (self.origin_area_size.1 as i32 + self.area_scale) as u32,
                     );
-                } else {
-                    if self.scale_factor < 20 {
-                        self.scale_factor += 1;
-                    }
+                } else if self.scale_zoom < 20 {
+                    self.scale_zoom += 1;
                 }
             }
             MainMessage::ZoomOut => {
                 if self.alt {
-                    self.scale_size -= 1;
-                    return Command::Resize(
-                        self.area_size.0 as i32 + self.scale_size,
-                        self.area_size.1 as i32 + self.scale_size,
+                    self.area_scale -= 1;
+                    self.area_size = (
+                        (self.origin_area_size.0 as i32 + self.area_scale) as u32,
+                        (self.origin_area_size.1 as i32 + self.area_scale) as u32,
                     );
-                } else {
-                    if self.scale_factor > -20 {
-                        self.scale_factor -= 1;
-                    }
+                } else if self.scale_zoom > -20 {
+                    self.scale_zoom -= 1;
                 }
             }
         }
@@ -102,7 +100,7 @@ impl MainApp {
         } else {
             self.area_size
         };
-        let zoom_range = (self.config.zoom_area.unwrap_or(50) as i32 + self.scale_factor) as u32;
+        let zoom_range = (self.config.zoom_area.unwrap_or(50) as i32 + self.scale_zoom) as u32;
         let mut img = self.img.clone();
         let res = image::imageops::crop_imm(
             &img,

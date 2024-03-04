@@ -6,11 +6,11 @@ use app::MainApp;
 use mouse_position::{Mouse, MouseExt};
 
 pub use config::Config;
-use winit::dpi::{LogicalSize, PhysicalSize, PhysicalPosition};
+use winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize};
 use winit::event::{ElementState, KeyEvent, MouseScrollDelta, TouchPhase};
 use winit::event_loop::EventLoopWindowTarget;
 // use winit::event_loop::ActiveEventLoop;
-use winit::keyboard::{KeyCode, ModifiersKeyState, PhysicalKey};
+use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::EventLoop,
@@ -75,14 +75,22 @@ fn main() -> Result<(), winit::error::EventLoopError> {
                         },
                     ..
                 } => close_requested = true,
-                WindowEvent::ModifiersChanged(m) => messages.push_back(app::MainMessage::AltKey(
-                    m.lalt_state() == ModifiersKeyState::Pressed
-                        || m.ralt_state() == ModifiersKeyState::Pressed,
-                )),
-                WindowEvent::CursorMoved { position: PhysicalPosition { x, y }, .. } => {
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: PhysicalKey::Code(KeyCode::AltLeft | KeyCode::AltRight),
+                            state,
+                            ..
+                        },
+                    ..
+                } => messages.push_back(app::MainMessage::AltKey(state.is_pressed())),
+                WindowEvent::CursorMoved {
+                    position: PhysicalPosition { x, y },
+                    ..
+                } => {
                     // if let Some(window) = window.as_ref() {
-                        messages.push_back(app::MainMessage::Move(x as i32, y as i32));
-                        // window.set_outer_position(LogicalPosition::new(x, y));
+                    messages.push_back(app::MainMessage::Move(x as i32, y as i32));
+                    // window.set_outer_position(LogicalPosition::new(x, y));
                     // }
                 }
                 WindowEvent::Resized(PhysicalSize { width, height }) => {
