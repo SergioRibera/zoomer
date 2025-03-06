@@ -33,7 +33,7 @@ pub enum Command {
 }
 
 impl MainApp {
-    pub fn new(config: Config, (x, y): (i32, i32)) -> Self {
+    pub fn new(config: Config, name: Option<String>) -> Self {
         #[cfg(feature = "wayland")]
         let wayshot = libwayshot::WayshotConnection::new().unwrap();
         let border_color = config.border_color.as_deref().and_then(str_to_color);
@@ -41,8 +41,10 @@ impl MainApp {
         let img = capture(
             #[cfg(feature = "wayland")]
             &wayshot,
-            (x, y),
+            name,
         );
+        // img.save(format!("{}.png", name.unwrap_or_else(|| "out".into())))
+        //     .unwrap();
         let origin_area_size = (config.width.unwrap_or(400), config.height.unwrap_or(200));
         Self {
             img_origin: img.clone(),
@@ -50,7 +52,7 @@ impl MainApp {
             config,
             border_color,
             alt: false,
-            pos: (0, 0),
+            pos: (500, 500),
             scale_zoom: 0,
             area_scale: 0,
             area_size: origin_area_size,

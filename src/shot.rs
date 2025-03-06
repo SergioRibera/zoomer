@@ -28,7 +28,7 @@ fn rotate(screen: &RgbaImage, t: Transform) -> RgbaImage {
 
 pub fn capture(
     #[cfg(feature = "wayland")] wayshot: &WayshotConnection,
-    (x, y): (i32, i32),
+    name: Option<String>,
 ) -> RgbaImage {
     let mut xc = None;
 
@@ -41,21 +41,15 @@ pub fn capture(
             .ok();
     }
 
-    #[cfg(feature = "x11")]
-    return xc.expect("Cannot get image from point");
-
     #[cfg(feature = "wayland")]
     wayshot
         .get_all_outputs()
         .iter()
         .find(|o| {
-            let OutputPositioning {
-                x: ox,
-                y: oy,
-                width,
-                height,
-            } = o.dimensions;
-            x >= ox && (x - width) < ox + width && y >= oy && (y - height) < oy + height
+            if let Some(n) = name.clone() {
+                return o.name == n;
+            }
+            false
         })
         .map(|o| {
             rotate(
@@ -72,7 +66,6 @@ pub fn generate_border(img: &mut RgbaImage, border_thickness: u32, color: Rgba<u
     // TODO: extract from image
     let color = color;
 
-    // Dibujar el borde en los lados de la imagen
     for x in 0..width {
         for y in 0..border_thickness {
             img.put_pixel(x, y, color);
