@@ -28,7 +28,7 @@ in
     # toolchain = fenix.${system}.fromToolchainFile { dir = ./..; };
     toolchain = fenix.${system}.fromToolchainFile {
       file = ./../rust-toolchain.toml;
-      sha256 = "sha256-3jVIIf5XPnUU1CRaTyAiO0XHVbJl12MSx3eucTXCjtE=";
+      sha256 = "sha256-AJ6LX/Q/Er9kS15bn9iflkUwcgYqRQxiOIL2ToVAXaU=";
     };
     # crane: cargo and artifacts manager
     craneLib = crane.${system}.overrideToolchain toolchain;
@@ -112,6 +112,7 @@ in
           libxkbcommon
         ]
         ++ buildInputs;
+      LD_LIBRARY_PATH = "${lib.makeLibraryPath buildInputs}";
       # PKG_CONFIG_PATH = "${pkgs.fontconfig.dev}/lib/pkgconfig";
     };
   }
